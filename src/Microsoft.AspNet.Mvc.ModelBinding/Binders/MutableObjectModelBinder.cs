@@ -8,7 +8,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.ModelBinding.Internal;
-using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Mvc.ModelBinding
 {
@@ -39,8 +38,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // post-processing, e.g. property setters and hooking up validation
             ProcessDto(bindingContext, (ComplexModelDto)result.Model);
             return new ModelBindingResult(
-                bindingContext.Model, 
-                bindingContext.ModelName, 
+                bindingContext.Model,
+                bindingContext.ModelName,
                 isModelSet: true);
         }
 
