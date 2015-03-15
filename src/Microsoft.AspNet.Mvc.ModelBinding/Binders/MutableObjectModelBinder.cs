@@ -323,6 +323,12 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             {
                 var propertyName = property.Name;
                 var propertyMetadata = bindingContext.ModelMetadata.Properties[propertyName];
+                if (propertyMetadata == null)
+                {
+                    // Skip indexer properties and others ModelMetadata ignores.
+                    continue;
+                }
+
                 var requiredValidator = bindingContext.OperationBindingContext
                                                       .ValidatorProvider
                                                       .GetValidators(propertyMetadata)
