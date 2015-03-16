@@ -15,26 +15,27 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 return null;
             }
 
-            ModelBindingHelper.ValidateBindingContext(bindingContext,
-                                                      typeof(ComplexModelDto),
-                                                      allowNullModel: false);
+            ModelBindingHelper.ValidateBindingContext(bindingContext, typeof(ComplexModelDto), allowNullModel: false);
 
             var dto = (ComplexModelDto)bindingContext.Model;
             foreach (var propertyMetadata in dto.PropertyMetadata)
             {
-                    var propertyModelName = ModelBindingHelper.CreatePropertyModelName(
-                            bindingContext.ModelName,
-                            propertyMetadata.BinderModelName ?? propertyMetadata.PropertyName);
+                var propertyModelName = ModelBindingHelper.CreatePropertyModelName(
+                    bindingContext.ModelName,
+                    propertyMetadata.BinderModelName ?? propertyMetadata.PropertyName);
+                var propertyBindingContext =
+                    new ModelBindingContext(bindingContext, propertyModelName, propertyMetadata);
 
-                var propertyBindingContext = new ModelBindingContext(bindingContext,
-                                                                     propertyModelName,
-                                                                     propertyMetadata);
-
-                // bind and propagate the values
-                // If we can't bind then leave the result missing (don't add a null).
+                // Bind and propagate the values.
                 var modelBindingResult =
                     await bindingContext.OperationBindingContext.ModelBinder.BindModelAsync(propertyBindingContext);
-                if (modelBindingResult != null)
+                if (modelBindingResult == null)
+                {
+                    // Could not bind. Add default result to let caller know to pick up default value (if any).
+                    dto.Results[propertyMetadata] =
+                        new ModelBindingResult(model: null, key: propertyModelName, isModelSet: false);
+                }
+                else
                 {
                     dto.Results[propertyMetadata] = modelBindingResult;
                 }
