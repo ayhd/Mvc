@@ -26,7 +26,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         {
             // Return the parameter attributes first.
             var parameterAttributes = parameter.GetCustomAttributes();
-            var typeAttributes = parameter.ParameterType.GetTypeInfo().GetCustomAttributes();
+            var typeAttributes = ModelAttributes.GetAttributesForType(parameter.ParameterType);
 
             return parameterAttributes.Concat(typeAttributes);
         }
