@@ -36,12 +36,11 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             var result = await CreateAndPopulateDto(bindingContext, mutableObjectBinderContext.PropertyMetadata);
 
             // post-processing, e.g. property setters and hooking up validation
-            var isEmptyModel = ProcessDto(bindingContext, (ComplexModelDto)result.Model);
+            var isModelSet = ProcessDto(bindingContext, (ComplexModelDto)result.Model);
             return new ModelBindingResult(
                 bindingContext.Model,
                 bindingContext.ModelName,
-                isModelSet: true,
-                isEmptyModel: isEmptyModel);
+                isModelSet);
         }
 
         protected virtual bool CanUpdateProperty(ModelMetadata propertyMetadata)
@@ -52,7 +51,13 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         internal async Task<bool> CanCreateModel(MutableObjectBinderContext context)
         {
             var bindingContext = context.ModelBindingContext;
+
+            // Reviewers: The isTopLevelObject value is wrong whenever a binder (e.g. CollectionModelBinder) uses
+            // GetMetadataForType(). Suggest we need ModelMetadata.GetMetadataForElementType() and a special case here
+            // for ComplexModelDto. Impact will likely be mainly extra "empty" (no bound property) objects created.
+            // Worth filing an issue?
             var isTopLevelObject = bindingContext.ModelMetadata.ContainerType == null;
+
             var hasExplicitAlias = bindingContext.ModelMetadata.BinderModelName != null;
 
             // If we get here the model is a complex object which was not directly bound by any previous model binder,
@@ -116,7 +121,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             // However, because a property might specify a custom binding source ([FromForm]), it's not correct
             // for us to just try bindingContext.ValueProvider.ContainsPrefixAsync(bindingContext.ModelName),
             // because that may include ALL value providers - that would lead us to mistakenly create the model
-            // when the data is coming from a source we should use (ex: value found in query string, but the 
+            // when the data is coming from a source we should use (ex: value found in query string, but the
             // model has [FromForm]).
             //
             // To do this we need to enumerate the properties, and see which of them provide a binding source
@@ -132,7 +137,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             //      If a property does not have a binding source, then it's fair game for any value provider.
             //
             // If any property meets the above conditions and has a value from valueproviders, then we'll
-            // create the model and try to bind it. OR if ALL properties of the model have a greedy source, 
+            // create the model and try to bind it. OR if ALL properties of the model have a greedy source,
             // then we go ahead and create it.
             //
             var isAnyPropertyEnabledForValueProviderBasedBinding = false;
@@ -423,8 +428,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 }
             }
 
-            // Have only default values (if those) when !isModelSet. That is no property was bound.
-            return !isModelSet;
+            return isModelSet;
         }
 
         protected virtual void SetProperty(
