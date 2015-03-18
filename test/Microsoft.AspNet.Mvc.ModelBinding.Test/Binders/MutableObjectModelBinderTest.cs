@@ -383,7 +383,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             // Assert
             Assert.NotNull(retValue);
-            Assert.False(retValue.IsModelSet); // MutableObjectModelBinder lets caller know DTO got nothing.
+            Assert.True(retValue.IsModelSet);
             var returnedPerson = Assert.IsType<Person>(retValue.Model);
             Assert.Same(model, returnedPerson);
             testableBinder.Verify();
@@ -436,7 +436,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
 
             // Assert
             Assert.NotNull(retValue);
-            Assert.False(retValue.IsModelSet); // MutableObjectModelBinder lets caller know DTO got nothing.
+            Assert.True(retValue.IsModelSet);
             var returnedPerson = Assert.IsType<Person>(retValue.Model);
             Assert.Same(model, returnedPerson);
             testableBinder.Verify();

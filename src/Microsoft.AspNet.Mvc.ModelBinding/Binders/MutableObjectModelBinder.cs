@@ -36,11 +36,11 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             var result = await CreateAndPopulateDto(bindingContext, mutableObjectBinderContext.PropertyMetadata);
 
             // post-processing, e.g. property setters and hooking up validation
-            var isModelSet = ProcessDto(bindingContext, (ComplexModelDto)result.Model);
+            ProcessDto(bindingContext, (ComplexModelDto)result.Model);
             return new ModelBindingResult(
                 bindingContext.Model,
                 bindingContext.ModelName,
-                isModelSet);
+                isModelSet: true);
         }
 
         protected virtual bool CanUpdateProperty(ModelMetadata propertyMetadata)
@@ -95,16 +95,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 return true;
             }
 
-            // 3. The model name is not prefixed and a value provider can directly provide a value for the model name.
-            //    The fact that it is not prefixed means that the containsPrefixAsync call checks for the exact
-            //    model name instead of doing a prefix match.
-            if (!bindingContext.ModelName.Contains(".") &&
-                await bindingContext.ValueProvider.ContainsPrefixAsync(bindingContext.ModelName))
-            {
-                return true;
-            }
-
-            // 4. Any of the model properties can be bound using a value provider.
+            // 3. Any of the model properties can be bound using a value provider.
             if (await CanValueBindAnyModelProperties(context))
             {
                 return true;
@@ -367,7 +358,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             return validationInfo;
         }
 
-        internal bool ProcessDto(ModelBindingContext bindingContext, ComplexModelDto dto)
+        internal void ProcessDto(ModelBindingContext bindingContext, ComplexModelDto dto)
         {
             var metadataProvider = bindingContext.OperationBindingContext.MetadataProvider;
             var modelExplorer = metadataProvider.GetModelExplorerForType(bindingContext.ModelType, bindingContext.Model);
@@ -409,15 +400,13 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 }
             }
 
-            // for each property that was bound, call the setter, recording exceptions as necessary
-            bool isModelSet = false;
+            // For each property that ComplexModelDtoModelBinder attempted to bind, call the setter, recording
+            // exceptions as necessary.
             foreach (var entry in dto.Results)
             {
                 var dtoResult = entry.Value;
                 if (dtoResult != null)
                 {
-                    isModelSet |= dtoResult.IsModelSet;
-
                     var propertyMetadata = entry.Key;
                     IModelValidator requiredValidator;
                     validationInfo.RequiredValidators.TryGetValue(
@@ -427,8 +416,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                     SetProperty(bindingContext, modelExplorer, propertyMetadata, dtoResult, requiredValidator);
                 }
             }
-
-            return isModelSet;
         }
 
         protected virtual void SetProperty(
